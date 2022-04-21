@@ -1,6 +1,7 @@
 import React from "react";
 import { timeAgo } from "../utils/helper";
 import { ImageConfig } from "../utils/ImageConfig";
+import { truncate } from "../utils/helper";
 
 function MessageFile({ message, user }) {
   const isSelfMessage = message.sender === user;
@@ -10,7 +11,7 @@ function MessageFile({ message, user }) {
   const type = message?.data?.content_type?.split("/")[1] || null;
   const openFile = (e) => {
     e.preventDefault();
-    const url = message?.data?.public_url;
+    const url = message.data?.public_url;
     window.open(url, "_blank");
   };
   return (
@@ -38,7 +39,8 @@ function MessageFile({ message, user }) {
             </p>
             <div
               onClick={openFile}
-              style={{ wordBreak: "break-word"}} className="w-[220px] mr-auto h-auto my-2 p-2 rounded-md bg-[#202225] flex items-center pointer"
+              style={{ wordBreak: "break-word" }}
+              className="w-[220px] mr-auto h-auto my-2 p-2 rounded-md bg-[#202225] flex items-center pointer"
             >
               <img
                 src={ImageConfig[type] || ImageConfig["default"]}
@@ -46,7 +48,7 @@ function MessageFile({ message, user }) {
                 alt=""
               />
               <div className=" pointer text-[13px] mr-auto">
-                <span>{message?.data?.filename}</span>
+                <span>{truncate(message.data?.filename, 40)}</span>
               </div>
             </div>
             <p></p>
@@ -61,7 +63,8 @@ function MessageFile({ message, user }) {
           {type && (
             <div
               onClick={openFile}
-              style={{ wordBreak: "break-word"}} className="w-[220px] ml-auto h-auto my-2 p-2 rounded-md bg-[#202225] flex items-center pointer"
+              style={{ wordBreak: "break-word" }}
+              className="w-[220px] ml-auto h-auto my-2 p-2 rounded-md bg-[#202225] flex items-center pointer"
             >
               <img
                 src={ImageConfig[type] || ImageConfig["default"]}
@@ -69,7 +72,7 @@ function MessageFile({ message, user }) {
                 alt=""
               />
               <div className=" pointer text-[13px] mr-auto">
-                <span>{message?.data?.filename}</span>
+                <span>{truncate(message.data?.filename, 40)}</span>
               </div>
             </div>
           )}
