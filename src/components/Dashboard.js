@@ -192,13 +192,7 @@ function Dashboard({ setShowOtherUser, user }) {
         <div className="flex h-[48px] items-center justify-between my-auto px-3 text-[#dcddde] uppercase relative">
           <h4 className="text-[11.5px]  font-[600] uppercase">Text Channels</h4>
           <AddOutlinedIcon className="h-4" onClick={setShowInputAddGroup} />
-          <input
-            ref={fileUploadRef}
-            accept="*"
-            type="file"
-            onChange={onSelectFile}
-            className="hidden"
-          />
+
           {showInputAddGroup && (
             <input
               type="text"
@@ -275,7 +269,7 @@ function Dashboard({ setShowOtherUser, user }) {
 
             if (message?.data) {
               const checkType = message.data.content_type;
-              
+
               if (checkType?.includes("image/")) {
                 return (
                   <MessageImage message={message} key={index} user={user} />
@@ -314,9 +308,16 @@ function Dashboard({ setShowOtherUser, user }) {
             onClick={triggerShowUploadFile}
           />
           <input
+            ref={fileUploadRef}
+            accept="*"
+            type="file"
+            onChange={onSelectFile}
+            className=" h-full  absolute inset-0 opacity-0  bg-red-400"
+          />
+          <input
             type="text"
             ref={inputRef}
-            className="flex-1 bg-transparent w-full outline-none px-3"
+            className="flex-1 bg-transparent w-full outline-none px-3 z-50"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={(e) => {

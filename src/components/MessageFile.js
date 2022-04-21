@@ -57,9 +57,11 @@ function MessageFile({ message, user }) {
       )}
       {isSelfMessage && (
         <div className="text-[13px] ml-auto">
-          <div className="text-[#dcddde]  w-max ml-auto bg-[#202225] py-2 px-6 rounded-3xl whitespace-pre-wrap ">
-            {`${message.message}`}
-          </div>
+          {message.message.trim() !== "" && (
+            <div className="text-[#dcddde]  w-max ml-auto bg-[#202225] py-2 px-6 rounded-3xl whitespace-pre-wrap ">
+              {`${message.message}`}
+            </div>
+          )}
           {type && (
             <div
               onClick={openFile}
