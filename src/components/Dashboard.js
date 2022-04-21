@@ -15,9 +15,11 @@ import Swal from "sweetalert2";
 import { ImageConfig } from "../utils/ImageConfig";
 import HighlightOffOutlinedIcon from "@mui/icons-material/HighlightOffOutlined";
 import MessageText from "./MessageText";
+import MessageFile from "./MessageFile";
 import Filter from "bad-words-relaxed";
 import badWord from "../badWord.json";
 import { convertEnglish } from "../utils/helper";
+import MessageImage from "./MessageImage";
 
 function Dashboard({ setShowOtherUser, user }) {
   const inputRef = createRef();
@@ -156,11 +158,7 @@ function Dashboard({ setShowOtherUser, user }) {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const data = await fetch(`${process.env.REACT_APP_API_URL}/chat/message`, {
       method: "POST",
-      // headers: {
-      //   "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      // },
       body: formdata,
-      // redirect: "follow",
     });
     if (data.status === 200) {
       setInputFile(null);
@@ -181,7 +179,6 @@ function Dashboard({ setShowOtherUser, user }) {
       alert("Fail!");
     }
   };
-  console.log("value", inputValue);
   return (
     <div className="h-screen flex-1 flex items-center text-white">
       <div className="w-[240px] bg-[#2F3136] h-full">
@@ -273,9 +270,24 @@ function Dashboard({ setShowOtherUser, user }) {
           className="messageClass w-full flex flex-col px-3 pb-[80px] pt-4 overflow-y-scroll"
           id="messageList"
         >
-          {allMessage?.map((message, index) => (
-            <MessageText message={message} key={index} user={user} />
-          ))}
+          {allMessage?.map((message, index) => {
+            // console.log(checkType.includes("image/"));
+
+            if (message?.data) {
+              const checkType = message.data.content_type;
+              
+              if (checkType?.includes("image/")) {
+                return (
+                  <MessageImage message={message} key={index} user={user} />
+                );
+              } else {
+                return (
+                  <MessageFile message={message} key={index} user={user} />
+                );
+              }
+            }
+            return <MessageText message={message} key={index} user={user} />;
+          })}
         </div>
         {inputFile && (
           <div className="flex   w-[calc(100%-30px)] h-[100px] bg-[#40444B] absolute bottom-[3.8rem] left-1 rounded p-4">
@@ -319,7 +331,7 @@ function Dashboard({ setShowOtherUser, user }) {
             onClick={handleShowEmoji}
           />
           <SendIcon
-            className="h-6 cursor-pointer hover:opacity-80 mb-1"
+            className="h-6 cursor-pointer hover:opacity-80"
             onClick={() => sendMessage(roomId)}
           />
           {showEmoji && (

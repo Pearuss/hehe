@@ -1,7 +1,7 @@
 import fileDefault from "../assets/images/file-blank-solid-240.png";
 import filePdf from "../assets/images/file-pdf-solid-240.png";
 import fileImg from "../assets/images/image.png";
-import fileDoc from "../assets/images/doc.jpg";
+import fileDoc from "../assets/images/docx.png";
 import fileExcel from "../assets/images/excel.png";
 
 export const ImageConfig = {

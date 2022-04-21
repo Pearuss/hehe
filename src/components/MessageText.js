@@ -5,8 +5,6 @@ function MessageText({ message, user }) {
   const isSelfMessage = message.sender === user;
   const avatar =
     message.sender === "User 1" ? 1 : message.sender === "User 2" ? 2 : 3;
-
-  // console.log(message?.data?.public_url);
   return (
     <div className="flex items-center mb-4 ml-auto w-full">
       {!isSelfMessage && (
