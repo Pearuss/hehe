@@ -19,10 +19,12 @@ import MessageFile from "./MessageFile";
 import Filter from "bad-words-relaxed";
 import badWord from "../badWord.json";
 import { convertEnglish } from "../utils/helper";
+import UploadIcon from "@mui/icons-material/Upload";
 import MessageImage from "./MessageImage";
 
 function Dashboard({ setShowOtherUser, user }) {
   const inputRef = createRef();
+  const wrapperRef = useRef(null);
   const fileUploadRef = useRef();
 
   const filter = new Filter();
@@ -34,6 +36,7 @@ function Dashboard({ setShowOtherUser, user }) {
   const [inputAddGroupValue, setInputAddGroupValue] = useState("");
   const [showInputAddGroup, setShowInputAddGroup] = useToggle(false);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [showWrapper, setShowWrapper] = useState(false);
   const [cursorPosition, setCursorPosition] = useState();
   const [roomId, setRoomId] = useState("1");
   const [listRoom, setListRoom] = useState([
@@ -123,6 +126,21 @@ function Dashboard({ setShowOtherUser, user }) {
   const handleShowEmoji = () => {
     inputRef.current.focus();
     setShowEmoji(!showEmoji);
+  };
+
+  const onDragEnter = () => {
+    wrapperRef.current.classList.remove("hidden");
+    wrapperRef.current.classList.add("flex");
+  };
+
+  const onDragLeave = () => {
+    wrapperRef.current.classList.add("hidden");
+    wrapperRef.current.classList.remove("flex");
+  };
+
+  const onDrop = () => {
+    wrapperRef.current.classList.add("hidden");
+    wrapperRef.current.classList.remove("flex");
   };
 
   useEffect(() => {
@@ -231,6 +249,25 @@ function Dashboard({ setShowOtherUser, user }) {
         ))}
       </div>
       <div className="flex flex-col flex-1 h-full bg-[#32353B] relative">
+        <div
+          ref={wrapperRef}
+          onDrop={onDrop}
+          onDragLeave={onDragLeave}
+          onDragEnter={onDragEnter}
+          className={`absolute justify-center items-center h-full top-0 bottom-0 left-0 right-0 bg-gray-500 bg-opacity-40 z-10 hidden`}
+        >
+          <input
+            className="w-full h-full opacity-0"
+            type="file"
+            value=""
+            onChange={onSelectFile}
+          />
+          <div className={`absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] text-center`}>
+            <UploadIcon color="info" sx={{ fontSize: "100px" }} />
+            <p className="text-5xl">Upload file</p>
+            <p className="text-xl">Drop file here to upload</p>
+          </div>
+        </div>
         <div className="flex justify-between  w-full items-center">
           <div className="flex items-center py-[19.5px]">
             <TagOutlinedIcon
@@ -261,7 +298,8 @@ function Dashboard({ setShowOtherUser, user }) {
         <div className="h-[1.5px] bg-black w-full absolute top-[62.5px]"></div>
         <div
           style={{ flexGrow: "1" }}
-          className="messageClass w-full flex flex-col px-3 pb-[80px] pt-4 overflow-y-scroll"
+          className="messageClass relative w-full flex flex-col px-3 pb-[80px] pt-4 overflow-y-scroll"
+          onDragEnter={onDragEnter}
           id="messageList"
         >
           {allMessage?.map((message, index) => {
