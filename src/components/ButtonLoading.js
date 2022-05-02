@@ -8,7 +8,7 @@ const ButtonLoading = (props) => {
       const loadingProps = props.loading;
       const { messageLoading } = props;
       return (
-        <Button {..._.omit(props, ['isLoading', 'messageLoading', 'isSuccess'])} disabled>
+        <Button sx={{ backgroundColor: "#1976D2"}} {..._.omit(props, ['isLoading', 'messageLoading', 'isSuccess'])} disabled>
           <div className="flex items-center">
             {messageLoading}
             &nbsp;
@@ -19,7 +19,7 @@ const ButtonLoading = (props) => {
     }
 
     return (
-      <Button {..._.omit(props, ['isLoading', 'messageLoading', 'isSuccess'])} disabled={props.disabled}>
+      <Button color="primary" {..._.omit(props, ['isLoading', 'messageLoading', 'isSuccess'])} disabled={props.disabled}>
         {props.children}
       </Button>
     );
