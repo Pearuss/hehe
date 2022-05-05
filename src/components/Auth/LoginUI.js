@@ -2,14 +2,6 @@ import { Button, TextField, Typography } from "@mui/material";
 import React from "react";
 
 import { Controller } from "react-hook-form";
-// import Image from 'next/image';
-// import Link from 'next/link';
-
-// import ButtonLoading from "../ButtonLoading";
-
-// // eslint-disable-next-line react/jsx-props-no-spreading
-// /* eslint-disable react/jsx-props-no-spreading */
-/* eslint-disable */
 
 function LoginUI({
   submit,
@@ -44,7 +36,7 @@ function LoginUI({
           }}
           className="w-[500px] h-[460px] box-border bg-transparent px-16 py-10 rounded-md"
         >
-          <Typography color="primary" className="mb-16" variant="h4">
+          <Typography color="primary" className="mb-16 font-medium" variant="h4">
             Login to Chat Ngay
           </Typography>
           <Controller
@@ -54,17 +46,17 @@ function LoginUI({
             render={({ field }) => {
               return (
                 <TextField
-                  // inputProps={{ style: { color: 'white', height: "18px !important" } }}
+          
                   sx={{
                     input: { height: "18px !important" },
 
                     marginBottom: 4,
                   }}
                   // type={"email"}
-                  error={!!errors.email}
+                  error={!!errors.username}
                   variant="outlined"
-                  label={errors.email?.message || "Email"}
-                  placeholder="Enter your email"
+                  label={errors.username?.message || "User name"}
+                  placeholder="Enter your user name"
                   color="primary"
                   // size="medium"
                   fullWidth
@@ -105,7 +97,7 @@ function LoginUI({
               Need help?
             </Typography>
           </Link> */}
-          <Button className="w-full mt-8 shadow-customLogin font-medium  bg-[#1976D2]  mx-auto rounded-full py-3 px-3 tracking-wider active:animate-jelly" type="submit">Login</Button>
+          <Button className="w-full mt-8 shadow-customLogin font-medium text-white opacity-80  bg-[#1976D2]  mx-auto rounded-full py-3 px-3 tracking-wider active:animate-jelly" type="submit">Login</Button>
 
           {/* <ButtonLoading
             className="w-full mt-8 shadow-customLogin font-medium  bg-[#1976D2]  mx-auto rounded-full py-3 px-3 tracking-wider active:animate-jelly"

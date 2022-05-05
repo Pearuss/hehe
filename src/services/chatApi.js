@@ -13,6 +13,14 @@ const chatApi = {
     const url = `/chat/${payload.chattingUserId}`;
     return axiosClient.post(url, { data: payload.data });
   },
+  searchUser(value) {
+    const url = `/user?content=${value}`;
+    return axiosClient.get(url);
+  },
+  videoCall(friendId, data) {
+    const url = `/chat/${friendId}`;
+    return axiosClient.post(url, data);
+  },
 };
 
 export default chatApi;

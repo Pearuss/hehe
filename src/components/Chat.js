@@ -1,16 +1,8 @@
-import React, { useEffect } from "react";
-import useToggle from "../hooks/useToggle";
-import { messageListen } from "../utils/firebase";
+import React from "react";
 import Dashboard from "./Dashboard";
 
 function Chat() {
-  useEffect(() => {
-    // onMessageListener();
-    messageListen();
-  });
-
- 
-  return <Dashboard user="User 1"/>;
+  return <Dashboard />;
 }
 
 export default Chat;

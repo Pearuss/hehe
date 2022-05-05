@@ -1,6 +1,4 @@
 import React, { createRef, useEffect, useRef, useState } from "react";
-import firebase from "../utils/firebase";
-import { messageListen } from "../utils/firebase";
 import TagOutlinedIcon from "@mui/icons-material/TagOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
@@ -10,7 +8,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import SentimentSatisfiedAltIcon from "@mui/icons-material/SentimentSatisfiedAlt";
 import useToggle from "../hooks/useToggle";
 import Emoji from "./Emoji";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { ImageConfig } from "../utils/ImageConfig";
 import HighlightOffOutlinedIcon from "@mui/icons-material/HighlightOffOutlined";
@@ -24,75 +22,74 @@ import { useProfile } from "../hooks/useProfile";
 import { useChat } from "../hooks/useChat";
 import { io } from "socket.io-client";
 import chatApi from "../services/chatApi";
+import axios from "axios";
+import _ from "lodash";
+import { useMessage } from "../hooks/useMessage";
+import { CircularProgress } from "@mui/material";
+import CircleIcon from "@mui/icons-material/Circle";
+import LogoutIcon from "@mui/icons-material/Logout";
+import VideocamIcon from "@mui/icons-material/Videocam";
+import CallVideoDialog from "./Common/CallVideoDialog";
 
-function Dashboard({ user }) {
+function Dashboard() {
+  const navigate = useNavigate();
+
   const inputRef = createRef();
   const fileUploadRef = useRef();
   const messagesEndRef = useRef();
   const [roomId, setRoomId] = useState(null);
   const [chattingUserId, setChattingUserId] = useState(null);
+  const [chattingUser, setChattingUser] = useState(null);
   const [reply, setReply] = useState(null);
+  const [searchValue, setSearchValue] = useState("");
+  const [searchUser, setSearchUser] = useState([]);
+  const [showCallDialog, setShowCallDialog] = useState(false);
+  const [nameCall, setNameCall] = useState("");
+  const [idCall, setIdCall] = useState(null);
 
-  const { listRoomChat, allMessageRoom, refetch } = useChat(roomId);
+  const { listRoomChat, refetchListRoom } = useChat();
+  const { allMessageRoom, refetch, isLoading } = useMessage(roomId);
   const { profile } = useProfile();
+  // console.log(allMessageRoom);
   // console.log(profile);
-  // console.log(listRoomChat);
+  // console.log(chattingUser);
   // console.log(chattingUserId);
 
   const filter = new Filter();
   filter.addWords([...badWord]);
 
-  const [allMessage, setAllMessage] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [inputFile, setInputFile] = useState(null);
-  const [inputAddGroupValue, setInputAddGroupValue] = useState("");
   const [showInputAddGroup, setShowInputAddGroup] = useToggle(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [cursorPosition, setCursorPosition] = useState();
-  // const [roomId, setRoomId] = useState("1");
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (!token) navigate("/login", { replace: true });
+  }, [navigate]);
+
   useEffect(() => {
     const socket = io(process.env.REACT_APP_SOCKET);
-    // console.log(socket);
     const token = localStorage.getItem("access_token");
-    // console.log(token);
     socket.emit("initChat", token);
-    // socket.on("callReceived", (id, name) => {
-    //   console.log(`${name} is calling you on ${id}`);
-    //   // setNameCall(name);
-    //   // setIdCall(id);
-    //   // setShowCallDialog(true);
-    // });
-    socket.on("newMessages", async (message) => {
-      if (message.chatId === roomId || (!roomId && chattingUserId)) {
-        // console.log(message);
-        await refetch();
-        // dispatch(messageActions.addMoreMessage(message));
-        // const scrollContainer = document.getElementById("messageList");
-        // scrollContainer.scrollTo({
-        //   top: scrollContainer.scrollHeight,
-        //   left: 0,
-        //   behavior: "smooth",
-        // });
-      }
-
-      // const resChat = await fetchWithToken(
-      //   `${process.env.REACT_APP_API_KEY}/chat`
-      // );
-      // const listChat = await resChat.json();
-      // setListChat(listChat);
-      // const cloneListChat = _.cloneDeep(listChat);
-      // const updatedListChat = cloneListChat.map((chat) => {
-      //   if (chat._id === message.chatId) {
-      //     chat.messages[0] = message;
-      //   }
-      //   return chat;
-      // });
-      // setListChat(updatedListChat);
-
-      // return () => {
-      //   socket.emit("forceDisconnect");
-      // };
+    socket.on("callReceived", (id, name) => {
+      console.log(`${name} is calling you on ${id}`);
+      setNameCall(name);
+      setIdCall(id);
+      setShowCallDialog(true);
     });
+
+    socket.on("newMessages", async (message) => {
+      if (message.chatId === roomId || chattingUserId) {
+        setSearchValue("");
+        if (roomId) {
+          await refetch();
+        }
+        await refetchListRoom();
+      }
+    });
+
     return () => {
       socket.emit("forceDisconnect");
     };
@@ -108,47 +105,18 @@ function Dashboard({ user }) {
     "vnd.openxmlformats-officedocument.wordprocessingml.document",
     "vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   ];
-  // const fileBina = reader.readAsDataURL(inputFile);
-
-  // console.log(allMessage);
+  const onCallVideo = async () => {
+    const chatData = {
+      msgType: "call",
+      content: "Video Call",
+    };
+    const res = await chatApi.videoCall(chattingUserId, { data: chatData });
+    console.log(res);
+    window.open(`/video-call/${res.id}`);
+  };
 
   const type = inputFile?.type?.split("/")[1];
 
-  // const getAllMessageRoom = (room) => {
-  //   if (!room) return;
-  //   firebase
-  //     .database()
-  //     .ref(`messages/room-${room}`)
-  //     .once("value", function (snapshot) {
-  //       // console.log(snapshot);
-  //       const data = snapshot.val();
-  //       if (!data) {
-  //         setAllMessage([]);
-  //         return;
-  //       }
-
-  //       const newArray = Object.keys(data)?.map((key) => data[`${key}`]);
-  //       setAllMessage(newArray);
-  //       const scrollContainer = document.getElementById("messageList");
-  //       scrollContainer.scrollTo({
-  //         top: scrollContainer.scrollHeight,
-  //         left: 0,
-  //         behavior: "smooth",
-  //       });
-  //       setInputValue("");
-  //       const scrollContainer2 = document.querySelectorAll(".messageClass");
-  //       scrollContainer2[1]?.scrollTo({
-  //         top: scrollContainer.scrollHeight,
-  //         right: 0,
-  //         behavior: "smooth",
-  //       });
-  //       scrollContainer2[0]?.scrollTo({
-  //         top: scrollContainer.scrollHeight,
-  //         right: 0,
-  //         behavior: "smooth",
-  //       });
-  //     });
-  // };
   const triggerShowUploadFile = () => {
     fileUploadRef.current.click();
   };
@@ -179,200 +147,198 @@ function Dashboard({ user }) {
     setShowEmoji(!showEmoji);
   };
 
-  // useEffect(() => {
-  //   messageListen(roomId, getAllMessageRoom);
-  // }, [roomId]);
-
-  // useEffect(() => {
-  //   getAllMessageRoom(roomId);
-  // }, [roomId]);
-
   useEffect(() => {
     inputRef.current.selectionEnd = cursorPosition;
   }, [cursorPosition]);
 
   const sendMessage = async (e) => {
     // e.preventDefault();
-    if (inputValue.trim().length === 0) return;
+    if (inputValue.trim().length === 0 && !inputFile) return;
 
     const payload = {
       chattingUserId: chattingUserId,
       data: {
         msgType: "text",
         content: inputValue,
-        replyToId: reply?.id || null,
+        replyToId: reply?.message._id || null,
       },
     };
-
-    try {
-      await chatApi.sendMessage(payload);
-      setInputValue("");
-      // await refetch();
-    } catch (error) {
-      console.log(error);
+    if (inputValue.trim().length > 0) {
+      try {
+        await chatApi.sendMessage(payload);
+        setInputValue("");
+        // refetch();
+      } catch (error) {
+        console.log(error);
+      }
     }
 
-    // const formdata = new FormData();
-    // formdata.append("roomId", roomIdSendMessage);
-    // formdata.append("sender", user);
-    // formdata.append("message", filter.clean(convertEnglish(inputValue)));
-    // if (inputFile) {
-    //   formdata.append("file", inputFile);
-    // }
+    if (inputFile) {
+      const token = localStorage.getItem("access_token");
+      const url = `http://localhost:5000/api/chat/${chattingUserId}/file`;
+      const formData = new FormData();
+      formData.append("uploadedFile", inputFile);
+      console.log(...formData);
+      const config = {
+        headers: {
+          "content-type": "multipart/form-data",
+          authorization: "Bearer " + token,
+        },
+      };
+      axios.post(url, formData, config);
+      setInputFile(null);
+    }
+    setReply(null);
+  };
 
-    // const data = await fetch(`${process.env.REACT_APP_API_URL}/chat/message`, {
-    //   method: "POST",
-    //   body: formdata,
-    // });
-    // if (data.status === 200) {
-    //   setInputFile(null);
-    //   const scrollContainer = document.getElementById("messageList");
-    //   scrollContainer.scrollTo({
-    //     top: scrollContainer.scrollHeight,
-    //     left: 0,
-    //     behavior: "smooth",
-    //   });
-    //   const scrollContainer2 = document.querySelectorAll(".messageClass");
-    //   scrollContainer2[1]?.scrollTo({
-    //     top: 300000,
-    //     right: 0,
-    //     behavior: "smooth",
-    //   });
-    //   setInputValue("");
-    // } else {
-    //   alert("Fail!");
-    // }
+  const inputSearchChangeHandler = (e) => {
+    setSearchValue(e.target.value);
+
+    _.debounce(async () => {
+      const res = await chatApi.searchUser(e.target.value);
+      setSearchUser(res);
+    }, 500)();
   };
   return (
     <div className="h-screen flex-1 flex items-center text-white">
-      <div className="w-[240px] bg-[#2F3136] h-full">
+      <div className="w-[240px] bg-[#2F3136] h-full relative">
         <div className="flex justify-between my-5 px-3">
           <Link to={"/"}>
-            <h4 className="text-[15px] font-[600]">Hybrid Technologies</h4>
+            <h4 className="text-[16px] font-[600]">Chat Technologies</h4>
           </Link>
-          <KeyboardArrowDownOutlinedIcon className="h-4" />
+          <KeyboardArrowDownOutlinedIcon className="h-4 relative top-1" />
         </div>
         <div className="h-[1.5px] bg-black"></div>
         <div className="flex h-[48px] items-center justify-between my-auto px-3 text-[#dcddde] uppercase relative">
           <h4 className="text-[11.5px]  font-[600] uppercase">Text Channels</h4>
-          <AddOutlinedIcon className="h-4" onClick={setShowInputAddGroup} />
+          <AddOutlinedIcon
+            className="h-4 cursor-pointer hover:opacity-70"
+            onClick={setShowInputAddGroup}
+          />
 
-          {/* {showInputAddGroup && (
+          {showInputAddGroup && (
             <input
               type="text"
               className="absolute left-[240px] bottom-[-10px] z-40 bg-[#2F3136] border-2 border-[#202225] outline-none px-3 py-1 rounded-md w-[250px]"
-              value={inputAddGroupValue}
-              onChange={(e) => setInputAddGroupValue(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === "Enter") {
-                  if (inputAddGroupValue.trim().length === 0) return;
-                  setInputAddGroupValue(e.target.value);
-                  setListRoom([...listRoom, inputAddGroupValue]);
-                  setShowInputAddGroup(false);
-                  setInputAddGroupValue("");
-                }
-              }}
+              value={searchValue}
+              onChange={inputSearchChangeHandler}
             />
-          )} */}
+          )}
         </div>
-        {listRoomChat?.map((chat, index) => {
-          if (chat.user1[0]._id === profile._id) {
-            const { avatar, username, isOnline, _id } = chat.user2[0];
-            // console.log(chat.user2[0]);
-            return (
-              <div
-                key={index}
-                onClick={() => {
-                  setRoomId(chat._id);
-                  setChattingUserId(chat.user2[0]._id);
-                }}
-                className={`flex h-[42px] items-center px-2 mx-2 mt-0 text-[#dcddde] cursor-pointer bg-[#40444B] rounded`}
-              >
-                <TagOutlinedIcon className="h-5 text-[rgb(142,146,151)]" />
-                <div className="font-[500] text-[13px] mr-auto mt-[2px] ml-2">
-                  {username}
-                </div>
+        {searchUser.length > 0 &&
+          searchValue.length > 0 &&
+          searchUser?.map((user) => (
+            <div
+              key={user._id}
+              onClick={() => {
+                setChattingUserId(user._id);
+                setChattingUser(user);
+              }}
+              className={`flex h-[42px] items-center  ${
+                chattingUserId === user._id ? "bg-[#40444B]" : " bg-transparent"
+              } px-2 mx-2 mt-2 text-[#dcddde] cursor-pointer rounded`}
+            >
+              <TagOutlinedIcon className="h-5 text-[rgb(142,146,151)]" />
+              <div className="font-[500] text-[13px] mr-auto  ml-2">
+                {user?.username}
               </div>
-              // <Card
-              //   key={_id}
-              //   onClick={() => getChatGroup(chat._id, chat.user2[0])}
-              // >
-              //   <img
-              //     src={`${process.env.REACT_APP_SERVER}/avatars/${avatar}`}
-              //     alt='user'
-              //   />
-              //   <div>
-              //     <span>
-              //       {username} <sup>{isOnline ? "Online" : "Offine"}</sup>
-              //     </span>
-              //     <span>{chat?.messages[0]?.content}</span>
-              //   </div>
-              //   <span>
-              //     {moment(chat?.messages[0]?.createdAt).format("hh:mm")}
-              //   </span>
-              // </Card>
-            );
-          } else {
-            const { avatar, username, isOnline, _id } = chat.user1[0];
-            // console.log(chat.user1[0]);
-            return (
-              <div
-                onClick={() => {
-                  setRoomId(chat._id);
-                  setChattingUserId(chat.user1[0]._id);
-                }}
-                key={index}
-                className={`flex h-[42px] items-center px-2 mx-2 mt-0 text-[#dcddde] cursor-pointer bg-[#40444B] rounded`}
-              >
-                <TagOutlinedIcon className="h-5 text-[rgb(142,146,151)]" />
-                <div className="font-[500] text-[13px] mr-auto mt-[2px] ml-2">
-                  {username}
-                </div>
-              </div>
-              // <Card
-              //   key={_id}
-              //   onClick={() => getChatGroup(chat._id, chat.user1[0])}
-              // >
-              //   <img
-              //     src={`${process.env.REACT_APP_SERVER}/avatars/${avatar}`}
-              //     alt='user'
-              //   />
-              //   <div>
-              //     <span>{username}</span>
-              //     <span>{isOnline ? "Online" : "Offine"}</span>
-              //   </div>
-              //   <span>11:15</span>
-              // </Card>
-            );
-          }
-        })}
-        {/* {listRoom?.map((room, index) => (
-          <div
-            key={index}
-            onClick={() => {
-              setRoomId((index + 1).toString());
-            }}
-            className={`flex h-[42px] items-center px-2 mx-2 mt-2 text-[#dcddde] cursor-pointer ${
-              roomId === (index + 1).toString()
-                ? "bg-[#40444B]"
-                : "bg-transparent"
-            } rounded`}
-          >
-            <TagOutlinedIcon className="h-5 text-[rgb(142,146,151)]" />
-            <div className="font-[500] text-[13px] mr-auto mt-[2px] ml-2">
-              {room}
             </div>
+          ))}
+        {(searchUser.length === 0 || searchValue.length === 0) &&
+          listRoomChat?.map((chat, index) => {
+            // console.log(roomId === chat._id);
+            if (chat.user1[0]._id === profile._id) {
+              const { avatar, username, isOnline, _id } = chat.user2[0];
+              // console.log(chat.user2[0]);
+
+              return (
+                <div
+                  key={index}
+                  onClick={() => {
+                    setRoomId(chat._id);
+                    setChattingUserId(chat.user2[0]._id);
+                    setChattingUser(chat.user2[0]);
+                  }}
+                  className={`flex h-[42px] items-center px-2 mx-2 mt-0 text-[#dcddde] cursor-pointer ${
+                    roomId === chat._id ? "bg-[#40444B]" : " bg-transparent"
+                  }  rounded`}
+                >
+                  <TagOutlinedIcon className="h-5 text-[rgb(142,146,151)]" />
+                  <div className="font-[500] text-[13px] relative bottom-[1px] mr-auto mt-[2px] ml-2">
+                    {username}
+                  </div>
+                </div>
+              );
+            } else {
+              const { avatar, username, isOnline, _id } = chat.user1[0];
+              // console.log(chat.user1[0]);
+              return (
+                <div
+                  onClick={() => {
+                    setRoomId(chat._id);
+                    setChattingUserId(chat.user1[0]);
+                  }}
+                  key={index}
+                  className={`flex h-[42px] items-center px-2 mx-2 mt-0 text-[#dcddde] cursor-pointer ${
+                    roomId === chat._id ? "bg-[#40444B]" : " bg-transparent"
+                  } rounded`}
+                >
+                  <TagOutlinedIcon className="h-5 text-[rgb(142,146,151)]" />
+                  <div className="font-[500] text-[13px] mr-auto mt-[2px] ml-2">
+                    {username}
+                  </div>
+                </div>
+              );
+            }
+          })}
+        <div className="flex items-center px-3 h-[52px] rounded bg-[#292b2f] absolute bottom-0 left-0 right-0 ">
+          <div
+            onClick={() => navigate("/profile")}
+            className="w-[32px] h-[32px] cursor-pointer"
+          >
+            <img
+              src={`https://i.pravatar.cc/100?img=1`}
+              alt="imgUser"
+              className="rounded-full object-cover w-full h-full"
+            />
           </div>
-        ))} */}
+          <div className="flex flex-col ml-1">
+            <span
+              onClick={() => navigate("/profile")}
+              className="text-[14px] cursor-pointer font-[500] pl-2 relative bottom-1"
+            >
+              {profile?.username}
+            </span>
+            <CircleIcon
+              className={`h-[10px]  ml-1 `}
+              color={profile?.isOnline ? "success" : "success"}
+            />
+          </div>
+          <LogoutIcon
+            onClick={() => {
+              localStorage.removeItem("access_token");
+              navigate("/login", { replace: true });
+            }}
+            className="h-[22px] cursor-pointer ml-auto"
+          />
+        </div>
       </div>
       <div className="flex flex-col flex-1 h-full bg-[#32353B] relative">
         <div className="flex justify-between  w-full items-center">
           <div className="flex items-center py-[19.5px]">
             <TagOutlinedIcon className="h-6 text-[#8e9297]" />
-            <h3 className="ml-2 text-[15px] font-[600]">Technical Solution</h3>
+            <h3 className="ml-2 text-[15px] font-[600]">
+              {chattingUser
+                ? `${chattingUser?.username}, ${profile.username}`
+                : "Chat group"}
+            </h3>
           </div>
+          <VideocamIcon
+            className="h-5 cursor-pointer hover:opacity-70 ml-auto mr-4"
+            onClick={() => setShowCallDialog(true)}
+          />
           <RefreshIcon
-            className="h-5 mr-4"
+            className="h-5 cursor-pointer hover:opacity-70 mr-4"
             onClick={() => {
               messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
             }}
@@ -385,8 +351,14 @@ function Dashboard({ user }) {
             className="messageClass mb-2 relative w-full flex flex-col px-3 pb-[80px] pt-4"
             id="messageList"
           >
-            {allMessageRoom?.map((message, index) => {
+            {isLoading && (
+              <div className="flex items-center justify-center">
+                <CircularProgress sx={{ color: "white !important" }} />
+              </div>
+            )}
+            {allMessageRoom?.map((message) => {
               // console.log(checkType.includes("image/"));
+              // console.log(message);
               if (message.msgType === "text" || message.msgType === "call") {
                 // console.log(message);
                 // console.log(profile);
@@ -396,8 +368,31 @@ function Dashboard({ user }) {
                     key={message._id}
                     message={message}
                     profile={profile}
+                    setReply={setReply}
                   />
                 );
+              } else {
+                if (
+                  message.fileId.originalFilename.endsWith(".png") ||
+                  message.fileId.originalFilename.endsWith(".jpg") ||
+                  message.fileId.originalFilename.endsWith(".jpeg")
+                ) {
+                  // console.log(message);
+                  return;
+                  <MessageImage
+                    key={message._id}
+                    message={message}
+                    data={message.fileId.fileName}
+                  />;
+                } else {
+                  return (
+                    <MessageFile
+                      key={message._id}
+                      message={message}
+                      data={message.fileId}
+                    />
+                  );
+                }
               }
 
               // if (message?.data) {
@@ -420,7 +415,7 @@ function Dashboard({ user }) {
           </div>
         </div>
 
-        {/* {inputFile && (
+        {inputFile && (
           <div className="flex   w-[calc(100%-30px)] h-[100px] bg-[#40444B] absolute bottom-[3.8rem] left-1 rounded p-4">
             <div className="h-full max-w-[32%] flex items-center relative gap-2 pointer">
               <img
@@ -438,10 +433,25 @@ function Dashboard({ user }) {
               />
             </div>
           </div>
-        )} */}
-        <div className="flex items-center absolute bottom-4 left-1 right-6 h-[40px] bg-[#40444B] rounded-lg px-3 text-[#dcddde]">
+        )}
+        {reply?.message?._id && (
+          <div className="flex flex-col  w-[calc(100%-40px)] h-auto bg-[#40444B] absolute bottom-[4rem] left-4 rounded px-3 py-1">
+            <div className="flex items-center w-[100%] text-[14px] gap-2 mb-1">
+              <span className="text-gray-400">Reply to </span>
+              <span className="text-[#0e0e0e] font-medium">
+                {reply?.isSelfReply ? "Your self" : "Test"}
+              </span>
+              <HighlightOffOutlinedIcon
+                onClick={() => setReply(null)}
+                className=" ml-auto text-red-400 h-4 pointer hover:opacity-50"
+              />
+            </div>
+            <div className="text-[15px]">{reply?.message?.content}</div>
+          </div>
+        )}
+        <div className="flex items-center absolute bottom-4 left-4 right-6 h-[46px] bg-[#40444B] rounded-lg px-3  text-[#dcddde]">
           <AddCircleOutlineOutlinedIcon
-            className="h-6"
+            className="h-6 cursor-pointer hover:opacity-70"
             onClick={triggerShowUploadFile}
           />
           <input
@@ -472,11 +482,11 @@ function Dashboard({ user }) {
             className="h-6 cursor-pointer hover:opacity-80"
             onClick={() => sendMessage()}
           />
-          {/* {showEmoji && (
+          {showEmoji && (
             <div className="absolute top-0 right-0 -translate-y-[105%] z-10">
               <Emoji pickEmoji={pickEmoji} />
             </div>
-          )} */}
+          )}
         </div>
       </div>
       {showEmoji && (
@@ -486,6 +496,12 @@ function Dashboard({ user }) {
           className="fixed top-0 left-0 w-[100vw] h-[100vh] z-0"
         ></div>
       )}
+      <CallVideoDialog
+        open={showCallDialog}
+        setOpen={setShowCallDialog}
+        callName={"nameCall"}
+        idCall={"idCall"}
+      />
     </div>
   );
 }

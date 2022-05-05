@@ -50,6 +50,7 @@ axiosClient.interceptors.response.use(
       if (error.response.status === 401) {
         // clear old token
         localStorage.removeItem("access_token");
+        window.location.reload();
         //alert("Token error, reload the pages");
         // console.log("Token error , redirect to login and show notification");
         return;

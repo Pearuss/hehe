@@ -1,10 +1,9 @@
 import React from "react";
 import { timeAgo } from "../utils/helper";
 
-function MessageImage({ message, user }) {
-  const isSelfMessage = message.sender === user;
-  const avatar =
-    message.sender === "User 1" ? 1 : message.sender === "User 2" ? 2 : 3;
+function MessageImage({ message, profile }) {
+  const isSelfMessage = profile._id === message.from;
+  const avatar = Math.floor(Math.random() * 6);
 
   const url = message.data?.public_url;
 

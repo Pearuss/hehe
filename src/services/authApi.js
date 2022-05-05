@@ -5,6 +5,10 @@ const authApi = {
     const url = "/auth/login";
     return axiosClient.post(url, data);
   },
+  register(data) {
+    const url = "/auth/register";
+    return axiosClient.post(url, data);
+  },
 
   //   getById(id: string): Promise<Student> {
   //     const url = `/quizzes/${id}`;
