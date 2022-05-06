@@ -1,10 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "react-query";
+import { useQuery } from "react-query";
 import profileApi from "../services/profileApi";
 
 export function useProfile() {
   const queryKey = ["profile"];
-  const queryClient = useQueryClient();
-  const { data, isLoading, error } = useQuery(
+  const { data, isLoading, refetch } = useQuery(
     queryKey,
     () => profileApi.getProfile(),
     {
@@ -14,7 +13,7 @@ export function useProfile() {
 
   return {
     isLoading,
-    error,
+    refetch,
     profile: data,
   };
 }

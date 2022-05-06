@@ -2,6 +2,7 @@ import { Button, TextField, Typography } from "@mui/material";
 import React from "react";
 
 import { Controller } from "react-hook-form";
+import { Link } from "react-router-dom";
 
 function LoginUI({
   submit,
@@ -12,6 +13,7 @@ function LoginUI({
   isLoading,
 }) {
   const { errors } = formState;
+  console.log(isLoading);
   return (
     <div
       style={{
@@ -36,8 +38,11 @@ function LoginUI({
           }}
           className="w-[500px] h-[460px] box-border bg-transparent px-16 py-10 rounded-md"
         >
-          <Typography color="primary" className="mb-16 font-medium" variant="h4">
+          <Typography color="primary" className="mb-4 font-medium" variant="h4">
             Login to Chat Ngay
+          </Typography>
+          <Typography align="center" className="text-primary text-base mb-8 mt-2">
+            {errorForm}
           </Typography>
           <Controller
             name="username"
@@ -99,15 +104,12 @@ function LoginUI({
           </Link> */}
           <Button className="w-full mt-8 shadow-customLogin font-medium text-white opacity-80  bg-[#1976D2]  mx-auto rounded-full py-3 px-3 tracking-wider active:animate-jelly" type="submit">Login</Button>
 
-          {/* <ButtonLoading
-            className="w-full mt-8 shadow-customLogin font-medium  bg-[#1976D2]  mx-auto rounded-full py-3 px-3 tracking-wider active:animate-jelly"
-            messageLoading="Processing..."
-            isLoading={isLoading}
-            variant="contained"
-            type="submit"
-          >
-            Sign in
-          </ButtonLoading> */}
+          <p className="flex justify-center mt-12">
+            <span className="text-[#3D5170]">You don&apos;t have an account?</span>
+            <Link to="/register">
+              <div className="no-underline ml-1 font-semibold text-[#1976D2]">Register</div>
+            </Link>
+          </p>
 
         </form>
       </div>

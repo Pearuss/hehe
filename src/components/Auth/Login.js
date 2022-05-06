@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
@@ -41,10 +41,10 @@ const Login = () => {
       // console.log(res);
 
       localStorage.setItem("access_token", res.token);
-      navigate("/")
+      navigate("/");
     } catch (error) {
       console.log(error);
-      //   setErrorFormLogin('Server not response');
+      setErrorFormLogin(error?.data?.msg);
       // }
     }
   };

@@ -3,10 +3,11 @@ import React from "react";
 import { timeAgo } from "../utils/helper";
 import ReplyIcon from "@mui/icons-material/Reply";
 
-function MessageText({ message, profile, setReply }) {
+function MessageText({ message, profile, setReply, chattingUser }) {
   const isSelfMessage = profile._id === message.from;
-  // const avatar =
-  //   message.sender === "User 1" ? 1 : message.sender === "User 2" ? 2 : 3;
+
+  const avatar = `${process.env.REACT_APP_SERVER}/avatars/${chattingUser?.avatar}`;
+  const backupUrl = `https://images.unsplash.com/photo-1437652633673-cc02b9c67a1b?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2069&q=80`;
 
   const replyHandler = () => {
     setReply({ message, isSelfMessage });
@@ -20,7 +21,9 @@ function MessageText({ message, profile, setReply }) {
       {message?.replyToId?.content && (
         <div
           className={`px-3 py-1 absolute top-[-26px]  bg-[#202225] opacity-60 rounded-xl text-sm ${
-            isSelfMessage ? "ml-auto right-2" : "left-[64px] top-[-19px] mr-auto"
+            isSelfMessage
+              ? "ml-auto right-2"
+              : "left-[64px] top-[-19px] mr-auto"
           }`}
         >
           {message?.replyToId?.content}
@@ -39,7 +42,7 @@ function MessageText({ message, profile, setReply }) {
           <div className="flex items-center mt-1">
             <div className="w-[40px] h-[40px]">
               <img
-                src={`https://i.pravatar.cc/100?img=1`}
+                src={chattingUser?.avatar ? avatar : backupUrl}
                 alt="imgUser"
                 className="rounded-full object-cover w-full h-full"
               />

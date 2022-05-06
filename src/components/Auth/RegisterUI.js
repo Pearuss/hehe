@@ -2,6 +2,7 @@ import { Button, TextField, Typography } from "@mui/material";
 import React from "react";
 
 import { Controller } from "react-hook-form";
+import { Link } from "react-router-dom";
 
 function RegisterUI({
   submit,
@@ -12,6 +13,7 @@ function RegisterUI({
   isLoading,
 }) {
   const { errors } = formState;
+  console.log(isLoading);
   return (
     <div
       style={{
@@ -31,14 +33,17 @@ function RegisterUI({
           rgba(211, 226, 227, 0.8) 100%
         )`,
           }}
-          className="w-[500px] h-[560px] box-border bg-transparent px-16 py-10 rounded-md"
+          className="w-[500px] h-[600px] box-border bg-transparent px-16 py-10 rounded-md"
         >
           <Typography
             color="primary"
-            className="mb-12 font-medium"
+            className="mb-4 font-medium"
             variant="h4"
           >
             Register
+          </Typography>
+          <Typography align="center" className="text-primary text-base mb-8 mt-2">
+            {errorForm}
           </Typography>
           <Controller
             name="username"
@@ -174,18 +179,17 @@ function RegisterUI({
             className="w-full mt-8 shadow-customLogin font-medium text-white opacity-80  bg-[#1976D2]  mx-auto rounded-full py-3 px-3 tracking-wider active:animate-jelly"
             type="submit"
           >
-            Login
+            Register
           </Button>
 
-          {/* <ButtonLoading
-            className="w-full mt-8 shadow-customLogin font-medium  bg-[#1976D2]  mx-auto rounded-full py-3 px-3 tracking-wider active:animate-jelly"
-            messageLoading="Processing..."
-            isLoading={isLoading}
-            variant="contained"
-            type="submit"
-          >
-            Sign in
-          </ButtonLoading> */}
+          <p className="flex justify-center mt-12">
+            <span className="text-[#3D5170]">Already have an account?</span>
+            <Link to="/login">
+              <div className="no-underline ml-1 font-semibold text-[#1976D2]">
+                Login
+              </div>
+            </Link>
+          </p>
         </form>
       </div>
     </div>

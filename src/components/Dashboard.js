@@ -17,6 +17,7 @@ import MessageFile from "./MessageFile";
 import Filter from "bad-words-relaxed";
 import badWord from "../badWord.json";
 import { convertEnglish } from "../utils/helper";
+import UploadIcon from "@mui/icons-material/Upload";
 import MessageImage from "./MessageImage";
 import { useProfile } from "../hooks/useProfile";
 import { useChat } from "../hooks/useChat";
@@ -35,6 +36,7 @@ function Dashboard() {
   const navigate = useNavigate();
 
   const inputRef = createRef();
+  const wrapperRef = useRef(null);
   const fileUploadRef = useRef();
   const messagesEndRef = useRef();
   const [roomId, setRoomId] = useState(null);
@@ -50,10 +52,7 @@ function Dashboard() {
   const { listRoomChat, refetchListRoom } = useChat();
   const { allMessageRoom, refetch, isLoading } = useMessage(roomId);
   const { profile } = useProfile();
-  // console.log(allMessageRoom);
-  // console.log(profile);
-  // console.log(chattingUser);
-  // console.log(chattingUserId);
+  const backupUrl = `https://images.unsplash.com/photo-1437652633673-cc02b9c67a1b?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2069&q=80`;
 
   const filter = new Filter();
   filter.addWords([...badWord]);
@@ -62,6 +61,7 @@ function Dashboard() {
   const [inputFile, setInputFile] = useState(null);
   const [showInputAddGroup, setShowInputAddGroup] = useToggle(false);
   const [showEmoji, setShowEmoji] = useState(false);
+  // const [showWrapper, setShowWrapper] = useState(false);
   const [cursorPosition, setCursorPosition] = useState();
 
   useEffect(() => {
@@ -147,6 +147,21 @@ function Dashboard() {
     setShowEmoji(!showEmoji);
   };
 
+  const onDragEnter = () => {
+    wrapperRef.current.classList.remove("hidden");
+    wrapperRef.current.classList.add("flex");
+  };
+
+  const onDragLeave = () => {
+    wrapperRef.current.classList.add("hidden");
+    wrapperRef.current.classList.remove("flex");
+  };
+
+  const onDrop = () => {
+    wrapperRef.current.classList.add("hidden");
+    wrapperRef.current.classList.remove("flex");
+  };
+
   useEffect(() => {
     inputRef.current.selectionEnd = cursorPosition;
   }, [cursorPosition]);
@@ -185,7 +200,8 @@ function Dashboard() {
           authorization: "Bearer " + token,
         },
       };
-      axios.post(url, formData, config);
+      const res = await axios.post(url, formData, config);
+      console.log(res);
       setInputFile(null);
     }
     setReply(null);
@@ -248,7 +264,7 @@ function Dashboard() {
           listRoomChat?.map((chat, index) => {
             // console.log(roomId === chat._id);
             if (chat.user1[0]._id === profile._id) {
-              const { avatar, username, isOnline, _id } = chat.user2[0];
+              const { username } = chat.user2[0];
               // console.log(chat.user2[0]);
 
               return (
@@ -257,7 +273,9 @@ function Dashboard() {
                   onClick={() => {
                     setRoomId(chat._id);
                     setChattingUserId(chat.user2[0]._id);
-                    setChattingUser(chat.user2[0]);
+                    if (chat.user2[0]) {
+                      setChattingUser(chat.user2[0]);
+                    }
                   }}
                   className={`flex h-[42px] items-center px-2 mx-2 mt-0 text-[#dcddde] cursor-pointer ${
                     roomId === chat._id ? "bg-[#40444B]" : " bg-transparent"
@@ -270,13 +288,16 @@ function Dashboard() {
                 </div>
               );
             } else {
-              const { avatar, username, isOnline, _id } = chat.user1[0];
+              const { username } = chat.user1[0];
               // console.log(chat.user1[0]);
               return (
                 <div
                   onClick={() => {
                     setRoomId(chat._id);
-                    setChattingUserId(chat.user1[0]);
+                    setChattingUserId(chat.user1[0]._id);
+                    if (chat.user1[0]) {
+                      setChattingUser(chat.user1[0]);
+                    }
                   }}
                   key={index}
                   className={`flex h-[42px] items-center px-2 mx-2 mt-0 text-[#dcddde] cursor-pointer ${
@@ -297,7 +318,11 @@ function Dashboard() {
             className="w-[32px] h-[32px] cursor-pointer"
           >
             <img
-              src={`https://i.pravatar.cc/100?img=1`}
+              src={
+                profile?.avatar
+                  ? `${process.env.REACT_APP_SERVER}/avatars/${profile.avatar}`
+                  : `${backupUrl}`
+              }
               alt="imgUser"
               className="rounded-full object-cover w-full h-full"
             />
@@ -324,6 +349,27 @@ function Dashboard() {
         </div>
       </div>
       <div className="flex flex-col flex-1 h-full bg-[#32353B] relative">
+        <div
+          ref={wrapperRef}
+          onDrop={onDrop}
+          onDragLeave={onDragLeave}
+          onDragEnter={onDragEnter}
+          className={`absolute justify-center items-center h-full top-0 bottom-0 left-0 right-0 bg-gray-500 bg-opacity-40 z-10 hidden`}
+        >
+          <input
+            className="w-full h-full opacity-0"
+            type="file"
+            value=""
+            onChange={onSelectFile}
+          />
+          <div
+            className={`absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] text-center`}
+          >
+            <UploadIcon color="info" sx={{ fontSize: "100px" }} />
+            <p className="text-5xl">Upload file</p>
+            <p className="text-xl">Drop file here to upload</p>
+          </div>
+        </div>
         <div className="flex justify-between  w-full items-center">
           <div className="flex items-center py-[19.5px]">
             <TagOutlinedIcon className="h-6 text-[#8e9297]" />
@@ -357,58 +403,43 @@ function Dashboard() {
               </div>
             )}
             {allMessageRoom?.map((message) => {
-              // console.log(checkType.includes("image/"));
-              // console.log(message);
               if (message.msgType === "text" || message.msgType === "call") {
-                // console.log(message);
-                // console.log(profile);
-                // // return
                 return (
                   <MessageText
                     key={message._id}
                     message={message}
                     profile={profile}
                     setReply={setReply}
+                    chattingUser={chattingUser}
                   />
                 );
               } else {
                 if (
-                  message.fileId.originalFilename.endsWith(".png") ||
-                  message.fileId.originalFilename.endsWith(".jpg") ||
-                  message.fileId.originalFilename.endsWith(".jpeg")
+                  message?.fileId?.originalFilename.endsWith(".png") ||
+                  message?.fileId?.originalFilename.endsWith(".jpg") ||
+                  message?.fileId?.originalFilename.endsWith(".jpeg")
                 ) {
-                  // console.log(message);
-                  return;
-                  <MessageImage
-                    key={message._id}
-                    message={message}
-                    data={message.fileId.fileName}
-                  />;
+                  // return;
+                  return (
+                    <MessageImage
+                      key={message._id}
+                      message={message}
+                      profile={profile}
+                      setReply={setReply}
+                      chattingUser={chattingUser}
+                    />
+                  );
                 } else {
                   return (
                     <MessageFile
                       key={message._id}
                       message={message}
-                      data={message.fileId}
+                      profile={profile}
+                      chattingUser={chattingUser}
                     />
                   );
                 }
               }
-
-              // if (message?.data) {
-              //   const checkType = message.data.content_type;
-
-              //   if (checkType?.includes("image/")) {
-              //     return (
-              //       <MessageImage message={message} key={index} user={user} />
-              //     );
-              //   } else {
-              //     return (
-              //       <MessageFile message={message} key={index} user={user} />
-              //     );
-              //   }
-              // }
-              // return <MessageText message={message} key={index} user={user} />;
             })}
 
             <div ref={messagesEndRef} className="relative top-[40px]" />
@@ -416,7 +447,7 @@ function Dashboard() {
         </div>
 
         {inputFile && (
-          <div className="flex   w-[calc(100%-30px)] h-[100px] bg-[#40444B] absolute bottom-[3.8rem] left-1 rounded p-4">
+          <div className="flex  w-[calc(100%-40px)] h-[100px] bg-[#40444B] absolute bottom-[4rem] left-4 rounded p-4">
             <div className="h-full max-w-[32%] flex items-center relative gap-2 pointer">
               <img
                 src={ImageConfig[type] || ImageConfig["default"]}

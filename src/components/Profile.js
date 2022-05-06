@@ -1,13 +1,16 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useProfile } from "../hooks/useProfile";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import { Dialog, Slider, Tooltip } from "@mui/material";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "../utils/helper";
+import { useNavigate } from "react-router-dom";
+import profileApi from "../services/profileApi";
 
 function Profile() {
+  const navigate = useNavigate();
   const profileImageRef = useRef();
-  const { profile } = useProfile();
+  const { profile, refetch } = useProfile();
 
   const [profileImage, setProfileImage] = useState();
   const [profileImageFormData, setProfileImageFormData] = useState();
@@ -16,6 +19,7 @@ function Profile() {
   const [zoomImage, setZoomImage] = useState(1);
   const [openCropImage, setOpenCropImage] = useState(false);
   const [profileData, setProfileData] = useState();
+
   useEffect(() => {
     if (profile) {
       setProfileData({
@@ -23,10 +27,11 @@ function Profile() {
         email: profile.email,
         name: profile.name,
       });
+      // setProfileImage()
     }
   }, [profile]);
 
-  console.log(profileImageFormData);
+  // console.log(profileImageFormData);
   const profileChangeHandler = (e) => {
     const { name, value } = e.target;
     setProfileData((oldState) => ({
@@ -34,9 +39,25 @@ function Profile() {
       [name]: value,
     }));
   };
-  const updatePostHandler = () => {
-    alert("update profile");
+  const updatePostHandler = async () => {
+    const formData = new FormData();
+    formData.append("avatar", profileImageFormData, `${profile._id}.png`);
+    formData.append("username", profileData.username);
+    formData.append("name", profileData.name);
+
+    try {
+      await profileApi.updateProfile(formData);
+      await refetch();
+      alert("profile updated");
+    } catch (error) {
+      console.log("error");
+    }
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (!token) navigate("/login", { replace: true });
+  }, [navigate]);
   const onSelectFile = (event) => {
     if (profileImage === undefined) {
       setProfileImage(null);
@@ -135,7 +156,11 @@ function Profile() {
             }
           >
             <img
-              src={profileImage ? profileImage : "/bg-1.jpg"}
+              src={
+                profileImage?.includes("base64")
+                  ? profileImage
+                  : `${process.env.REACT_APP_SERVER}/avatars/${profile?.avatar}`
+              }
               alt="Avatar"
               className="w-full h-full"
             />
@@ -168,7 +193,7 @@ function Profile() {
               Email*
             </span>
             <input
-              onChange={profileChangeHandler}
+              // onChange={profileChangeHandler}
               value={profileData?.email}
               className="w-full p-3 outline-none rounded ml-8 bg-[#40444B]"
               name="email"
