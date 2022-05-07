@@ -1,44 +1,57 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { createRef, useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
+import axios from "axios";
+import _ from "lodash";
+import { io } from "socket.io-client";
+import Filter from "bad-words-relaxed";
+
+// hooks
+import useToggle from "../hooks/useToggle";
+import { useProfile } from "../hooks/useProfile";
+import { useChat } from "../hooks/useChat";
+import { useMessage } from "../hooks/useMessage";
+
+// external
+
+import Emoji from "./Emoji";
+import MessageText from "./MessageText";
+import MessageFile from "./MessageFile";
+import MessageImage from "./MessageImage";
+import badWord from "../badWord.json";
+import { ImageConfig } from "../utils/ImageConfig";
+import { convertEnglish } from "../utils/helper";
+
+import chatApi from "../services/chatApi";
+import { CircularProgress } from "@mui/material";
+
+// icon
+import UploadIcon from "@mui/icons-material/Upload";
+import CircleIcon from "@mui/icons-material/Circle";
+import LogoutIcon from "@mui/icons-material/Logout";
+import VideocamIcon from "@mui/icons-material/Videocam";
 import TagOutlinedIcon from "@mui/icons-material/TagOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import SendIcon from "@mui/icons-material/Send";
+import CallVideoDialog from "./Common/CallVideoDialog";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SentimentSatisfiedAltIcon from "@mui/icons-material/SentimentSatisfiedAlt";
-import useToggle from "../hooks/useToggle";
-import Emoji from "./Emoji";
-import { Link, useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
-import { ImageConfig } from "../utils/ImageConfig";
 import HighlightOffOutlinedIcon from "@mui/icons-material/HighlightOffOutlined";
-import MessageText from "./MessageText";
-import MessageFile from "./MessageFile";
-import Filter from "bad-words-relaxed";
-import badWord from "../badWord.json";
-import { convertEnglish } from "../utils/helper";
-import UploadIcon from "@mui/icons-material/Upload";
-import MessageImage from "./MessageImage";
-import { useProfile } from "../hooks/useProfile";
-import { useChat } from "../hooks/useChat";
-import { io } from "socket.io-client";
-import chatApi from "../services/chatApi";
-import axios from "axios";
-import _ from "lodash";
-import { useMessage } from "../hooks/useMessage";
-import { CircularProgress } from "@mui/material";
-import CircleIcon from "@mui/icons-material/Circle";
-import LogoutIcon from "@mui/icons-material/Logout";
-import VideocamIcon from "@mui/icons-material/Videocam";
-import CallVideoDialog from "./Common/CallVideoDialog";
+import FolderSharedIcon from "@mui/icons-material/FolderShared";
+import FolderIcon from "@mui/icons-material/Folder";
 
 function Dashboard() {
   const navigate = useNavigate();
+  let enterTarget = null;
 
   const inputRef = createRef();
   const wrapperRef = useRef(null);
   const fileUploadRef = useRef();
   const messagesEndRef = useRef();
+
   const [roomId, setRoomId] = useState(null);
   const [chattingUserId, setChattingUserId] = useState(null);
   const [chattingUser, setChattingUser] = useState(null);
@@ -48,11 +61,17 @@ function Dashboard() {
   const [showCallDialog, setShowCallDialog] = useState(false);
   const [nameCall, setNameCall] = useState("");
   const [idCall, setIdCall] = useState(null);
+  const [openFolder, setOpenFolder] = useToggle(null);
+  const [allFolder, setAllFolder] = useState(null);
+
+  console.log(allFolder);
 
   const { listRoomChat, refetchListRoom } = useChat();
   const { allMessageRoom, refetch, isLoading } = useMessage(roomId);
   const { profile } = useProfile();
   const backupUrl = `https://images.unsplash.com/photo-1437652633673-cc02b9c67a1b?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2069&q=80`;
+
+  // console.log(allMessageRoom);
 
   const filter = new Filter();
   filter.addWords([...badWord]);
@@ -65,35 +84,46 @@ function Dashboard() {
   const [cursorPosition, setCursorPosition] = useState();
 
   useEffect(() => {
+    if (allMessageRoom) {
+      const allFile = allMessageRoom.filter(
+        (message) => message.msgType === "file"
+      );
+      setAllFolder(allFile);
+    }
+  }, [allMessageRoom]);
+
+  useEffect(() => {
     const token = localStorage.getItem("access_token");
     if (!token) navigate("/login", { replace: true });
   }, [navigate]);
 
   useEffect(() => {
     const socket = io(process.env.REACT_APP_SOCKET);
-    const token = localStorage.getItem("access_token");
-    socket.emit("initChat", token);
     socket.on("callReceived", (id, name) => {
       console.log(`${name} is calling you on ${id}`);
       setNameCall(name);
       setIdCall(id);
       setShowCallDialog(true);
     });
+    if (chattingUserId) {
+      // const socket = io(process.env.REACT_APP_SOCKET);
+      const token = localStorage.getItem("access_token");
+      socket.emit("initChat", token);
 
-    socket.on("newMessages", async (message) => {
-      if (message.chatId === roomId || chattingUserId) {
-        setSearchValue("");
-        if (roomId) {
-          await refetch();
+      socket.on("newMessages", async (message) => {
+        if (message.chatId === roomId || chattingUserId) {
+          setSearchValue("");
+          if (roomId) {
+            await refetch();
+          }
+          await refetchListRoom();
         }
-        await refetchListRoom();
-      }
-    });
-
+      });
+    }
     return () => {
       socket.emit("forceDisconnect");
     };
-  }, [roomId, chattingUserId]);
+  }, [chattingUserId]);
 
   const typeFile = [
     "pdf",
@@ -126,7 +156,7 @@ function Dashboard() {
     if (newFile && typeFile.includes(newFile.type.split("/")[1])) {
       setInputFile(newFile);
     } else {
-      Swal.fire("File không hợp lệ");
+      alert("File không hợp lệ");
       return;
     }
   };
@@ -147,14 +177,17 @@ function Dashboard() {
     setShowEmoji(!showEmoji);
   };
 
-  const onDragEnter = () => {
-    wrapperRef.current.classList.remove("hidden");
+  const onDragEnter = (e) => {
+    enterTarget = e.target;
     wrapperRef.current.classList.add("flex");
+    wrapperRef.current.classList.remove("hidden");
   };
 
-  const onDragLeave = () => {
-    wrapperRef.current.classList.add("hidden");
-    wrapperRef.current.classList.remove("flex");
+  const onDragLeave = (e) => {
+    if (enterTarget === e.target) {
+      wrapperRef.current.classList.add("hidden");
+      wrapperRef.current.classList.remove("flex");
+    }
   };
 
   const onDrop = () => {
@@ -174,7 +207,7 @@ function Dashboard() {
       chattingUserId: chattingUserId,
       data: {
         msgType: "text",
-        content: inputValue,
+        content: convertEnglish(filter.clean(inputValue)),
         replyToId: reply?.message._id || null,
       },
     };
@@ -216,7 +249,7 @@ function Dashboard() {
     }, 500)();
   };
   return (
-    <div className="h-screen flex-1 flex items-center text-white">
+    <div className="h-screen flex-1 flex items-center text-white relative">
       <div className="w-[240px] bg-[#2F3136] h-full relative">
         <div className="flex justify-between my-5 px-3">
           <Link to={"/"}>
@@ -224,7 +257,7 @@ function Dashboard() {
           </Link>
           <KeyboardArrowDownOutlinedIcon className="h-4 relative top-1" />
         </div>
-        <div className="h-[1.5px] bg-black"></div>
+        <div className=" h-[1.5px] bg-black w-full absolute top-[62.5px]"></div>
         <div className="flex h-[48px] items-center justify-between my-auto px-3 text-[#dcddde] uppercase relative">
           <h4 className="text-[11.5px]  font-[600] uppercase">Text Channels</h4>
           <AddOutlinedIcon
@@ -351,9 +384,13 @@ function Dashboard() {
       <div className="flex flex-col flex-1 h-full bg-[#32353B] relative">
         <div
           ref={wrapperRef}
+          onDragEnter={onDragEnter}
+          // onDragEnter={(e) => {
+          //   alert("e");
+          //   console.log(e);
+          // }}
           onDrop={onDrop}
           onDragLeave={onDragLeave}
-          onDragEnter={onDragEnter}
           className={`absolute justify-center items-center h-full top-0 bottom-0 left-0 right-0 bg-gray-500 bg-opacity-40 z-10 hidden`}
         >
           <input
@@ -361,6 +398,7 @@ function Dashboard() {
             type="file"
             value=""
             onChange={onSelectFile}
+            // multiple
           />
           <div
             className={`absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] text-center`}
@@ -379,9 +417,13 @@ function Dashboard() {
                 : "Chat group"}
             </h3>
           </div>
-          <VideocamIcon
+          <FolderSharedIcon
             className="h-5 cursor-pointer hover:opacity-70 ml-auto mr-4"
-            onClick={() => setShowCallDialog(true)}
+            onClick={setOpenFolder}
+          />
+          <VideocamIcon
+            className="h-5 cursor-pointer hover:opacity-70 mr-4"
+            onClick={onCallVideo}
           />
           <RefreshIcon
             className="h-5 cursor-pointer hover:opacity-70 mr-4"
@@ -395,6 +437,7 @@ function Dashboard() {
           <div
             style={{ flexGrow: "1" }}
             className="messageClass mb-2 relative w-full flex flex-col px-3 pb-[80px] pt-4"
+            onDragEnter={onDragEnter}
             id="messageList"
           >
             {isLoading && (
@@ -490,7 +533,7 @@ function Dashboard() {
             accept="*"
             type="file"
             onChange={onSelectFile}
-            className=" h-full  absolute inset-0 hidden  bg-red-400"
+            className=" hidden"
           />
           <input
             type="text"
@@ -527,11 +570,37 @@ function Dashboard() {
           className="fixed top-0 left-0 w-[100vw] h-[100vh] z-0"
         ></div>
       )}
+      {openFolder && (
+        <div className="w-[20vw] absolute right-0 bottom-[62px] bg-[#292B2F] h-[calc(100vh-125px)] rounded-md overflow-y-hidden">
+          <div className="font-medium text-xl mt-2 mb-6 mx-4 text-[#88888e] tracking-wider">
+            {`Total file: ${allFolder?.length}`}
+          </div>
+          {allFolder?.map((file, index) => (
+            <div
+              key={index}
+              style={{ wordBreak: "break-word" }}
+              className=" h-auto bg-[#40444B] rounded mx-2 px-1 mt-2 flex items-center cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault();
+                const url = `${process.env.REACT_APP_SERVER}/files/${file?.fileId?.fileName}`;
+                if (file?.fileId?.fileName) {
+                  window.open(url, "_blank");
+                }
+              }}
+            >
+              <FolderIcon className="w-[50px] h-[50px] text-[#1c1a1a] mr-2" />
+              <span className="text-[#88888e] text-[14px]">
+                {file?.fileId?.originalFilename}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
       <CallVideoDialog
         open={showCallDialog}
         setOpen={setShowCallDialog}
-        callName={"nameCall"}
-        idCall={"idCall"}
+        callName={nameCall}
+        idCall={idCall}
       />
     </div>
   );

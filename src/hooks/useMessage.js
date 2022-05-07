@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "react-query";
+import { useQuery } from "react-query";
 import chatApi from "../services/chatApi";
 
 export function useMessage(roomId) {

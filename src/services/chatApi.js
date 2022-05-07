@@ -21,6 +21,10 @@ const chatApi = {
     const url = `/chat/${friendId}`;
     return axiosClient.post(url, data);
   },
+  getFriend(chatId) {
+    const url = `/chat/friend/${chatId}`;
+    return axiosClient.get(url);
+  },
 };
 
 export default chatApi;
