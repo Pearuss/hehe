@@ -6,6 +6,7 @@ import axios from "axios";
 import _ from "lodash";
 import { io } from "socket.io-client";
 import Filter from "bad-words-relaxed";
+import { toast } from "react-toastify";
 
 // hooks
 import useToggle from "../hooks/useToggle";
@@ -64,8 +65,6 @@ function Dashboard() {
   const [openFolder, setOpenFolder] = useToggle(null);
   const [allFolder, setAllFolder] = useState(null);
 
-  console.log(allFolder);
-
   const { listRoomChat, refetchListRoom } = useChat();
   const { allMessageRoom, refetch, isLoading } = useMessage(roomId);
   const { profile } = useProfile();
@@ -99,6 +98,7 @@ function Dashboard() {
 
   useEffect(() => {
     const socket = io(process.env.REACT_APP_SOCKET);
+    const token = localStorage.getItem("access_token");
     socket.on("callReceived", (id, name) => {
       console.log(`${name} is calling you on ${id}`);
       setNameCall(name);
@@ -106,10 +106,7 @@ function Dashboard() {
       setShowCallDialog(true);
     });
     if (chattingUserId) {
-      // const socket = io(process.env.REACT_APP_SOCKET);
-      const token = localStorage.getItem("access_token");
       socket.emit("initChat", token);
-
       socket.on("newMessages", async (message) => {
         if (message.chatId === roomId || chattingUserId) {
           setSearchValue("");
@@ -120,21 +117,22 @@ function Dashboard() {
         }
       });
     }
+
     return () => {
       socket.emit("forceDisconnect");
     };
   }, [chattingUserId]);
 
-  const typeFile = [
-    "pdf",
-    "docx",
-    "xlsx",
-    "png",
-    "jpg",
-    "jpeg",
-    "vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  ];
+  // const typeFile = [
+  //   "pdf",
+  //   "docx",
+  //   "xlsx",
+  //   "png",
+  //   "jpg",
+  //   "jpeg",
+  //   "vnd.openxmlformats-officedocument.wordprocessingml.document",
+  //   "vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  // ];
   const onCallVideo = async () => {
     const chatData = {
       msgType: "call",
@@ -142,7 +140,11 @@ function Dashboard() {
     };
     const res = await chatApi.videoCall(chattingUserId, { data: chatData });
     console.log(res);
-    window.open(`/video-call/${res.id}`);
+    if (res?.id) {
+      window.open(`/video-call/${res.id}`);
+    } else {
+      toast.error("Thất bại");
+    }
   };
 
   const type = inputFile?.type?.split("/")[1];
@@ -152,11 +154,12 @@ function Dashboard() {
   };
   const onSelectFile = (e) => {
     const newFile = e.target.files[0];
+    console.log(newFile);
 
-    if (newFile && typeFile.includes(newFile.type.split("/")[1])) {
+    if (newFile && newFile.size < 204317) {
       setInputFile(newFile);
     } else {
-      alert("File không hợp lệ");
+      toast.error("Kích thước file quá lớn");
       return;
     }
   };
@@ -218,23 +221,23 @@ function Dashboard() {
         // refetch();
       } catch (error) {
         console.log(error);
+        toast.error("Thất bại");
       }
     }
 
     if (inputFile) {
       const token = localStorage.getItem("access_token");
-      const url = `http://localhost:5000/api/chat/${chattingUserId}/file`;
+      const url = `${process.env.REACT_APP_SERVER}/api/chat/${chattingUserId}/file`;
       const formData = new FormData();
       formData.append("uploadedFile", inputFile);
-      console.log(...formData);
       const config = {
         headers: {
           "content-type": "multipart/form-data",
           authorization: "Bearer " + token,
         },
       };
-      const res = await axios.post(url, formData, config);
-      console.log(res);
+      await axios.post(url, formData, config);
+
       setInputFile(null);
     }
     setReply(null);
@@ -375,6 +378,7 @@ function Dashboard() {
           <LogoutIcon
             onClick={() => {
               localStorage.removeItem("access_token");
+              toast.success("Logout thành công");
               navigate("/login", { replace: true });
             }}
             className="h-[22px] cursor-pointer ml-auto"
@@ -385,10 +389,6 @@ function Dashboard() {
         <div
           ref={wrapperRef}
           onDragEnter={onDragEnter}
-          // onDragEnter={(e) => {
-          //   alert("e");
-          //   console.log(e);
-          // }}
           onDrop={onDrop}
           onDragLeave={onDragLeave}
           className={`absolute justify-center items-center h-full top-0 bottom-0 left-0 right-0 bg-gray-500 bg-opacity-40 z-10 hidden`}
@@ -491,7 +491,7 @@ function Dashboard() {
 
         {inputFile && (
           <div className="flex  w-[calc(100%-40px)] h-[100px] bg-[#40444B] absolute bottom-[4rem] left-4 rounded p-4">
-            <div className="h-full max-w-[32%] flex items-center relative gap-2 pointer">
+            <div className="h-full max-w-[62%] flex items-center relative gap-2 pointer">
               <img
                 src={ImageConfig[type] || ImageConfig["default"]}
                 className="w-[100px] h-full object-cover pointer"

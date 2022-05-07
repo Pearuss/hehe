@@ -6,6 +6,7 @@ import Cropper from "react-easy-crop";
 import getCroppedImg from "../utils/helper";
 import { useNavigate } from "react-router-dom";
 import profileApi from "../services/profileApi";
+import { toast } from "react-toastify";
 
 function Profile() {
   const navigate = useNavigate();
@@ -48,9 +49,9 @@ function Profile() {
     try {
       await profileApi.updateProfile(formData);
       await refetch();
-      alert("profile updated");
+      toast.success("Cập nhật thông tin thành công");
     } catch (error) {
-      console.log("error");
+      toast.error("Thất bại");
     }
   };
 
@@ -98,7 +99,6 @@ function Profile() {
     // setOpen(false);
     setOpenCropImage(false);
   };
-  console.log();
   return (
     <div className="bg-[#202225] relative h-screen">
       {profileImage ? (

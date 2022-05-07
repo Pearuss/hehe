@@ -7,11 +7,12 @@ import { QueryClientProvider, QueryClient } from "react-query";
 import Register from "./components/Auth/Register";
 import Profile from "./components/Profile";
 import VideoCall from "./components/VideoCall";
+import { ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 const queryClient = new QueryClient();
 
 export default function App() {
-
   return (
     <QueryClientProvider client={queryClient}>
       <Routes>
@@ -26,6 +27,18 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
+      <ToastContainer
+        position="top-center"
+        autoClose={1000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+      {/* Same as */}
     </QueryClientProvider>
   );
 }
