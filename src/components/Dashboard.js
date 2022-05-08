@@ -105,18 +105,17 @@ function Dashboard() {
       setIdCall(id);
       setShowCallDialog(true);
     });
-    if (chattingUserId) {
-      socket.emit("initChat", token);
-      socket.on("newMessages", async (message) => {
-        if (message.chatId === roomId || chattingUserId) {
-          setSearchValue("");
-          if (roomId) {
-            await refetch();
-          }
-          await refetchListRoom();
+
+    socket.emit("initChat", token);
+    socket.on("newMessages", async (message) => {
+      if (message.chatId === roomId || chattingUserId) {
+        setSearchValue("");
+        if (roomId) {
+          await refetch();
         }
-      });
-    }
+        await refetchListRoom();
+      }
+    });
 
     return () => {
       socket.emit("forceDisconnect");
@@ -255,7 +254,7 @@ function Dashboard() {
     <div className="h-screen flex-1 flex items-center text-white relative">
       <div className="w-[240px] bg-[#2F3136] h-full relative">
         <div className="flex justify-between my-5 px-3">
-          <Link to={"/"}>
+          <Link to={"/home"}>
             <h4 className="text-[16px] font-[600]">Chat Technologies</h4>
           </Link>
           <KeyboardArrowDownOutlinedIcon className="h-4 relative top-1" />

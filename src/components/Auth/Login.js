@@ -41,7 +41,7 @@ const Login = () => {
       // console.log(res);
 
       localStorage.setItem("access_token", res.token);
-      navigate("/");
+      navigate("/home");
     } catch (error) {
       console.log(error);
       setErrorFormLogin(error?.data?.msg);

@@ -9,6 +9,7 @@ import Profile from "./components/Profile";
 import VideoCall from "./components/VideoCall";
 import { ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
+import Start from "./components/Start";
 
 const queryClient = new QueryClient();
 
@@ -20,9 +21,8 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/video-call/:chatId" element={<VideoCall />} />
 
-        {/* <Route path="/chat" element={<Chat />} /> */}
-
-        <Route path="/" element={<Chat />} />
+        <Route path="/" element={<Start />} />
+        <Route path="/home" element={<Chat />} />
         <Route path="/profile" element={<Profile />} />
 
         <Route path="*" element={<Navigate to="/login" />} />
